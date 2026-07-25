@@ -1,4 +1,8 @@
-const API_BASE = "/api";
+// Local: Vite proxies /api → Express.
+// Netlify/production: set VITE_API_URL to your backend URL (no trailing slash).
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : "/api";
 
 function getToken() {
   return localStorage.getItem("shopkart_token");
