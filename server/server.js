@@ -34,8 +34,19 @@ app.use("/api/admin", adminRoutes);
 async function startServer() {
   try {
     await testConnection();
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`ShopKart server running on http://localhost:${PORT}`);
+    });
+
+    server.on("error", (error) => {
+      if (error.code === "EADDRINUSE") {
+        console.error(
+          `Port ${PORT} is already in use. Stop the other server process, then restart.`
+        );
+      } else {
+        console.error("Server failed to start:", error.message);
+      }
+      process.exit(1);
     });
   } catch (error) {
     console.error("Failed to start server. Check MySQL credentials in .env");
