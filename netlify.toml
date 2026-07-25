@@ -1,9 +1,10 @@
-# Build from repo root → output in client/dist
 [build]
-  command = "npm run build"
+  command = "npm install --prefix client && npm run build --prefix client"
   publish = "client/dist"
 
-# React Router SPA fallback
+[build.environment]
+  NODE_VERSION = "22"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
