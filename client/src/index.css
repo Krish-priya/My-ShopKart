@@ -569,6 +569,12 @@ select {
   border-bottom: 1px solid var(--line);
 }
 
+/* Keep catalog chips behind the mobile menu / off dashboard pages */
+.navbar.menu-open .category-bar,
+body.nav-drawer-open .category-bar {
+  display: none;
+}
+
 .category-bar-inner {
   display: flex;
   gap: 0.55rem;
@@ -1707,6 +1713,18 @@ select {
 @media (max-width: 860px) {
   body.nav-drawer-open {
     overflow: hidden;
+  }
+
+  /* Drawer must fully cover page content (including any leftover catalog UI) */
+  body.nav-drawer-open .main-content,
+  body.nav-drawer-open .site-footer,
+  body.nav-drawer-open .category-bar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .navbar.menu-open {
+    z-index: 70;
   }
 
   .navbar-inner {

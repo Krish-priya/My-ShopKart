@@ -96,8 +96,14 @@ export default function Navbar() {
     navigate(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
   }
 
+  // Catalog chips only on shopping pages — never on dashboard/account screens
+  const path = location.pathname;
+  const showCatalogBar =
+    !menuOpen &&
+    (path === "/" || path === "/products" || path.startsWith("/products/"));
+
   return (
-    <header className="navbar" id="top" tabIndex={-1}>
+    <header className={`navbar${menuOpen ? " menu-open" : ""}`} id="top" tabIndex={-1}>
       <div className="navbar-top">
         <div className="navbar-inner">
           <Link to="/" className="brand">
@@ -281,7 +287,7 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-      <CategoryBar />
+      {showCatalogBar && <CategoryBar />}
     </header>
   );
 }
