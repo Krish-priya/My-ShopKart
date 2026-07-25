@@ -1,9 +1,9 @@
+# Build from repo root → output in client/dist
 [build]
-  base = "client"
   command = "npm run build"
-  publish = "dist"
+  publish = "client/dist"
 
-# React Router (SPA) — send all routes to index.html
+# React Router SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
