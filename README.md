@@ -1,4 +1,6 @@
-# ShopKart
+# My-ShopKart
+
+ShopKart — Full-stack e-commerce web app built with React.js, Node.js, Express.js & MySQL
 
 A beginner-friendly full-stack e-commerce website built for college project submission.
 
