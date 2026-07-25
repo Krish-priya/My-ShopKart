@@ -230,4 +230,4 @@ Use this account to open the **Admin** page.
 
 ## Author
 
-College project: **ShopKart** full-stack e-commerce website.
+**ShopKart** full-stack e-commerce website.
