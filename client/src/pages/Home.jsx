@@ -17,9 +17,9 @@ export default function Home() {
       apiRequest("/products/categories"),
     ])
       .then(([featuredData, dealsData, categoriesData]) => {
-        setFeatured(featuredData.products);
-        setDeals(dealsData.products);
-        setCategories(categoriesData.categories);
+        setFeatured(Array.isArray(featuredData.products) ? featuredData.products : []);
+        setDeals(Array.isArray(dealsData.products) ? dealsData.products : []);
+        setCategories(Array.isArray(categoriesData.categories) ? categoriesData.categories : []);
         setError("");
       })
       .catch((err) => setError(err.message))

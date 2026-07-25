@@ -12,12 +12,16 @@ function getToken() {
 
 function tryDemoFallback(path, method) {
   if (method !== "GET") return null;
-  if (!path.startsWith("/products")) return null;
-  try {
-    return handleDemoProducts(path);
-  } catch (err) {
-    throw err;
-  }
+  if (!String(path).startsWith("/products")) return null;
+  return handleDemoProducts(path);
+}
+
+function looksLikeApiPayload(path, data) {
+  if (!data || typeof data !== "object") return false;
+  if (path.startsWith("/products/categories")) return Array.isArray(data.categories);
+  if (/^\/products\/\d+/.test(path.split("?")[0])) return Boolean(data.product);
+  if (path.startsWith("/products")) return Array.isArray(data.products);
+  return true;
 }
 
 export async function apiRequest(path, options = {}) {
@@ -44,9 +48,12 @@ export async function apiRequest(path, options = {}) {
     throw new Error("Cannot connect to server. Is the backend running?");
   }
 
-  const data = await response.json().catch(() => ({}));
+  const contentType = response.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await response.json().catch(() => ({}))
+    : {};
 
-  if (!response.ok) {
+  if (!response.ok || !looksLikeApiPayload(path, data)) {
     const demo = tryDemoFallback(path, method);
     if (demo) return demo;
     throw new Error(data.message || "Something went wrong");
