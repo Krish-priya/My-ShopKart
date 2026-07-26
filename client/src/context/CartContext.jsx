@@ -1,5 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiRequest } from "../api";
+import { shouldUseLocalAuth } from "../localAuth";
+import {
+  addLocalCart,
+  getLocalCart,
+  removeLocalCartItem,
+  updateLocalCartItem,
+} from "../localShop";
 import { useAuth } from "./AuthContext";
 
 const CartContext = createContext(null);
@@ -13,6 +20,7 @@ export function CartProvider({ children }) {
     Boolean(localStorage.getItem("shopkart_token"))
   );
   const [error, setError] = useState("");
+  const useLocal = shouldUseLocalAuth();
 
   function applyCart(data) {
     setItems(data.items || []);
@@ -30,16 +38,26 @@ export function CartProvider({ children }) {
   async function refreshCart() {
     if (!user) {
       clearCartState();
+      setLoading(false);
       return;
     }
 
     setLoading(true);
     try {
-      const data = await apiRequest("/cart");
-      applyCart(data);
+      if (useLocal) {
+        applyCart(getLocalCart(user.id));
+      } else {
+        const data = await apiRequest("/cart");
+        applyCart(data);
+      }
       setError("");
     } catch (err) {
-      setError(err.message);
+      if (user?.id) {
+        applyCart(getLocalCart(user.id));
+        setError("");
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -50,34 +68,83 @@ export function CartProvider({ children }) {
       refreshCart();
     } else {
       clearCartState();
+      setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   async function addToCart(productId, quantity = 1) {
-    const data = await apiRequest("/cart", {
-      method: "POST",
-      body: JSON.stringify({ productId, quantity }),
-    });
-    applyCart(data);
-    return data;
+    if (!user) {
+      throw new Error("Please login first");
+    }
+
+    if (useLocal) {
+      const data = addLocalCart(user.id, productId, quantity);
+      applyCart(data);
+      return data;
+    }
+
+    try {
+      const data = await apiRequest("/cart", {
+        method: "POST",
+        body: JSON.stringify({ productId, quantity }),
+      });
+      applyCart(data);
+      return data;
+    } catch {
+      const data = addLocalCart(user.id, productId, quantity);
+      applyCart(data);
+      return data;
+    }
   }
 
   async function updateCartItem(cartItemId, quantity) {
-    const data = await apiRequest(`/cart/${cartItemId}`, {
-      method: "PUT",
-      body: JSON.stringify({ quantity: Number(quantity) }),
-    });
-    applyCart(data);
-    return data;
+    if (!user) {
+      throw new Error("Please login first");
+    }
+
+    if (useLocal) {
+      const data = updateLocalCartItem(user.id, cartItemId, quantity);
+      applyCart(data);
+      return data;
+    }
+
+    try {
+      const data = await apiRequest(`/cart/${cartItemId}`, {
+        method: "PUT",
+        body: JSON.stringify({ quantity: Number(quantity) }),
+      });
+      applyCart(data);
+      return data;
+    } catch {
+      const data = updateLocalCartItem(user.id, cartItemId, quantity);
+      applyCart(data);
+      return data;
+    }
   }
 
   async function removeCartItem(cartItemId) {
-    const data = await apiRequest(`/cart/${cartItemId}`, {
-      method: "DELETE",
-    });
-    applyCart(data);
-    return data;
+    if (!user) {
+      throw new Error("Please login first");
+    }
+
+    if (useLocal) {
+      const data = removeLocalCartItem(user.id, cartItemId);
+      applyCart(data);
+      return data;
+    }
+
+    try {
+      const data = await apiRequest(`/cart/${cartItemId}`, {
+        method: "DELETE",
+      });
+      applyCart(data);
+      return data;
+    } catch {
+      const data = removeLocalCartItem(user.id, cartItemId);
+      applyCart(data);
+      return data;
+    }
   }
 
   return (

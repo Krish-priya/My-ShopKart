@@ -1,5 +1,6 @@
 import { handleDemoProducts } from "./data/demoCatalog";
 import { handleLocalAuth, shouldUseLocalAuth } from "./localAuth";
+import { handleLocalOrders } from "./localShop";
 
 // Local: Vite proxies /api → Express.
 // Netlify/production: set VITE_API_URL to your backend URL (no trailing slash).
@@ -37,13 +38,21 @@ function withAuthHeaders(options = {}) {
   return { ...options, headers };
 }
 
+function tryLocalOrders(path, requestOptions) {
+  if (!path.startsWith("/orders")) return null;
+  return handleLocalOrders(path, requestOptions);
+}
+
 export async function apiRequest(path, options = {}) {
   const method = (options.method || "GET").toUpperCase();
   const requestOptions = withAuthHeaders(options);
 
-  // On Netlify (no backend URL), auth runs in the browser so signup/login always work.
+  // On Netlify (no backend URL), auth/orders run in the browser.
   if (path.startsWith("/auth/") && shouldUseLocalAuth()) {
     return handleLocalAuth(path, requestOptions);
+  }
+  if (path.startsWith("/orders") && shouldUseLocalAuth()) {
+    return handleLocalOrders(path, requestOptions);
   }
 
   let response;
@@ -55,6 +64,8 @@ export async function apiRequest(path, options = {}) {
     if (path.startsWith("/auth/")) {
       return handleLocalAuth(path, requestOptions);
     }
+    const localOrder = tryLocalOrders(path, requestOptions);
+    if (localOrder) return localOrder;
     const demo = tryDemoFallback(path, method);
     if (demo) return demo;
     throw new Error(
@@ -72,6 +83,9 @@ export async function apiRequest(path, options = {}) {
     if (path.startsWith("/auth/") && !isJson) {
       return handleLocalAuth(path, requestOptions);
     }
+    if (path.startsWith("/orders") && !isJson) {
+      return handleLocalOrders(path, requestOptions);
+    }
 
     const demo = tryDemoFallback(path, method);
     if (demo) return demo;
@@ -80,7 +94,7 @@ export async function apiRequest(path, options = {}) {
       throw new Error(
         import.meta.env.DEV
           ? "Cannot reach the ShopKart API. Start the backend: cd server && npm run dev"
-          : "Authentication service is unavailable. Please try again."
+          : "Service is unavailable. Please try again."
       );
     }
 

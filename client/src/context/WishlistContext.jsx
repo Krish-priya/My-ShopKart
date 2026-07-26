@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { apiRequest } from "../api";
 import { DEMO_PRODUCTS } from "../data/demoCatalog";
 import { shouldUseLocalAuth } from "../localAuth";
+import { addLocalCart } from "../localShop";
 import { useAuth } from "./AuthContext";
 
 const WishlistContext = createContext(null);
@@ -182,11 +183,34 @@ export function WishlistProvider({ children }) {
   }
 
   async function moveToCart(productId) {
-    const data = await apiRequest(`/wishlist/${Number(productId)}/move-to-cart`, {
-      method: "POST",
-    });
-    applyWishlist(data);
-    return data;
+    const id = Number(productId);
+    if (!user) {
+      throw new Error("Please login first");
+    }
+
+    if (useLocal) {
+      addLocalCart(user.id, id, 1);
+      const ids = loadLocalIds(user.id).filter((pid) => pid !== id);
+      saveLocalIds(user.id, ids);
+      const data = buildLocalWishlist(user.id);
+      applyWishlist(data);
+      return { message: "Moved to cart", ...data };
+    }
+
+    try {
+      const data = await apiRequest(`/wishlist/${id}/move-to-cart`, {
+        method: "POST",
+      });
+      applyWishlist(data);
+      return data;
+    } catch {
+      addLocalCart(user.id, id, 1);
+      const ids = loadLocalIds(user.id).filter((pid) => pid !== id);
+      saveLocalIds(user.id, ids);
+      const data = buildLocalWishlist(user.id);
+      applyWishlist(data);
+      return { message: "Moved to cart", ...data };
+    }
   }
 
   return (
