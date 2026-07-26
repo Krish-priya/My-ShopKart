@@ -1,8 +1,47 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiRequest } from "../api";
+import { DEMO_PRODUCTS } from "../data/demoCatalog";
+import { shouldUseLocalAuth } from "../localAuth";
 import { useAuth } from "./AuthContext";
 
 const WishlistContext = createContext(null);
+
+function wishlistKey(userId) {
+  return `shopkart_wishlist_${userId}`;
+}
+
+function loadLocalIds(userId) {
+  try {
+    const raw = localStorage.getItem(wishlistKey(userId));
+    const ids = raw ? JSON.parse(raw) : [];
+    return Array.isArray(ids) ? ids.map(Number).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalIds(userId, ids) {
+  localStorage.setItem(wishlistKey(userId), JSON.stringify(ids));
+}
+
+function buildLocalWishlist(userId) {
+  const productIds = loadLocalIds(userId);
+  const items = productIds.map((productId, index) => {
+    const product = DEMO_PRODUCTS.find((p) => Number(p.id) === Number(productId));
+    return {
+      id: index + 1,
+      product_id: productId,
+      created_at: new Date().toISOString(),
+      name: product?.name || `Product ${productId}`,
+      price: product?.price ?? 0,
+      image_url: product?.image_url || "",
+      category: product?.category || "",
+      stock: product?.stock ?? 0,
+      description: product?.description || "",
+    };
+  });
+  return { items, productIds, count: productIds.length };
+}
 
 export function WishlistProvider({ children }) {
   const { user } = useAuth();
@@ -12,6 +51,7 @@ export function WishlistProvider({ children }) {
   const [loading, setLoading] = useState(() =>
     Boolean(localStorage.getItem("shopkart_token"))
   );
+  const useLocal = shouldUseLocalAuth();
 
   function applyWishlist(data) {
     const nextItems = data.items || [];
@@ -38,10 +78,18 @@ export function WishlistProvider({ children }) {
 
     setLoading(true);
     try {
-      const data = await apiRequest("/wishlist");
-      applyWishlist(data);
+      if (useLocal) {
+        applyWishlist(buildLocalWishlist(user.id));
+      } else {
+        const data = await apiRequest("/wishlist");
+        applyWishlist(data);
+      }
     } catch {
-      clearWishlistState();
+      if (user?.id) {
+        applyWishlist(buildLocalWishlist(user.id));
+      } else {
+        clearWishlistState();
+      }
     } finally {
       setLoading(false);
     }
@@ -62,20 +110,68 @@ export function WishlistProvider({ children }) {
   }
 
   async function addToWishlist(productId) {
-    const data = await apiRequest("/wishlist", {
-      method: "POST",
-      body: JSON.stringify({ productId: Number(productId) }),
-    });
-    applyWishlist(data);
-    return data;
+    const id = Number(productId);
+    if (!user) {
+      throw new Error("Please login first");
+    }
+
+    if (useLocal) {
+      const ids = loadLocalIds(user.id);
+      if (!ids.includes(id)) {
+        ids.push(id);
+        saveLocalIds(user.id, ids);
+      }
+      const data = buildLocalWishlist(user.id);
+      applyWishlist(data);
+      return { message: "Added to wishlist", ...data };
+    }
+
+    try {
+      const data = await apiRequest("/wishlist", {
+        method: "POST",
+        body: JSON.stringify({ productId: id }),
+      });
+      applyWishlist(data);
+      return data;
+    } catch {
+      const ids = loadLocalIds(user.id);
+      if (!ids.includes(id)) {
+        ids.push(id);
+        saveLocalIds(user.id, ids);
+      }
+      const data = buildLocalWishlist(user.id);
+      applyWishlist(data);
+      return { message: "Added to wishlist", ...data };
+    }
   }
 
   async function removeFromWishlist(productId) {
-    const data = await apiRequest(`/wishlist/${Number(productId)}`, {
-      method: "DELETE",
-    });
-    applyWishlist(data);
-    return data;
+    const id = Number(productId);
+    if (!user) {
+      throw new Error("Please login first");
+    }
+
+    if (useLocal) {
+      const ids = loadLocalIds(user.id).filter((pid) => pid !== id);
+      saveLocalIds(user.id, ids);
+      const data = buildLocalWishlist(user.id);
+      applyWishlist(data);
+      return { message: "Removed from wishlist", ...data };
+    }
+
+    try {
+      const data = await apiRequest(`/wishlist/${id}`, {
+        method: "DELETE",
+      });
+      applyWishlist(data);
+      return data;
+    } catch {
+      const ids = loadLocalIds(user.id).filter((pid) => pid !== id);
+      saveLocalIds(user.id, ids);
+      const data = buildLocalWishlist(user.id);
+      applyWishlist(data);
+      return { message: "Removed from wishlist", ...data };
+    }
   }
 
   async function toggleWishlist(productId) {
