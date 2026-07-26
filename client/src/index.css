@@ -1945,58 +1945,94 @@ body.nav-drawer-open .category-bar {
 
   .product-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+    gap: 0.55rem;
     align-items: stretch;
   }
 
   .product-card {
     height: 100%;
+    border-radius: 14px;
+  }
+
+  /* Shorter images so ~4 cards fit on one phone screen */
+  .product-image-wrap {
+    aspect-ratio: 1 / 0.72;
   }
 
   .product-info {
-    padding: 0.7rem 0.65rem 0.4rem;
+    padding: 0.45rem 0.5rem 0.25rem;
+    gap: 0.1rem;
+  }
+
+  .product-category {
+    font-size: 0.68rem;
+    margin: 0 0 0.1rem;
   }
 
   .product-info h3 {
-    font-size: 0.9rem;
-    min-height: 2.4em;
+    font-size: 0.78rem;
+    line-height: 1.25;
+    min-height: 0;
+    margin: 0 0 0.15rem;
+    -webkit-line-clamp: 1;
+  }
+
+  .product-price-row {
+    margin: 0.1rem 0 0;
+    gap: 0.25rem;
   }
 
   .product-price {
-    font-size: 1rem;
+    font-size: 0.88rem;
   }
 
   .product-mrp {
-    font-size: 0.78rem;
+    font-size: 0.68rem;
   }
 
   .rating-line {
-    gap: 0.2rem;
+    gap: 0.15rem;
+    margin: 0 0 0.15rem;
   }
 
   .stars {
-    font-size: 0.78rem;
+    font-size: 0.68rem;
     letter-spacing: 0;
   }
 
   .rating-score,
   .rating-line .review-count {
-    font-size: 0.72rem;
+    font-size: 0.65rem;
+  }
+
+  .rating-line .review-count {
+    display: none;
   }
 
   .btn-cart-card {
-    margin: auto 0.55rem 0.55rem;
-    width: calc(100% - 1.1rem);
-    padding: 0.55rem 0.5rem;
-    font-size: 0.82rem;
-    border-radius: 10px;
+    margin: 0.25rem 0.4rem 0.4rem;
+    width: calc(100% - 0.8rem);
+    padding: 0.4rem 0.35rem;
+    font-size: 0.72rem;
+    border-radius: 8px;
   }
 
   .wish-toggle {
-    width: 34px;
-    height: 34px;
-    top: 0.45rem;
-    right: 0.45rem;
+    width: 28px;
+    height: 28px;
+    top: 0.35rem;
+    right: 0.35rem;
+  }
+
+  .wish-toggle .heart-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .deal-badge,
+  .stock-badge {
+    font-size: 0.62rem;
+    padding: 0.15rem 0.4rem;
   }
 
   .section-heading.row-between {
@@ -2025,10 +2061,33 @@ body.nav-drawer-open .category-bar {
     grid-template-columns: 1fr;
   }
 
-  /* Keep a clean 2-column catalog on phones */
+  /* Compact 2x2 catalog on phones */
   .product-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
+    gap: 0.45rem;
+  }
+
+  .product-image-wrap {
+    aspect-ratio: 1 / 0.65;
+  }
+
+  .product-info {
+    padding: 0.35rem 0.4rem 0.15rem;
+  }
+
+  .product-info h3 {
+    font-size: 0.74rem;
+  }
+
+  .product-price {
+    font-size: 0.82rem;
+  }
+
+  .btn-cart-card {
+    margin: 0.2rem 0.35rem 0.35rem;
+    width: calc(100% - 0.7rem);
+    padding: 0.35rem 0.3rem;
+    font-size: 0.68rem;
   }
 
   .hero {
