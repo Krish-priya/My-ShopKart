@@ -1,12 +1,10 @@
-# My-ShopKart
+# ShopKart
 
-ShopKart — Full-stack e-commerce web app built with React.js, Node.js, Express.js & MySQL
+Full-stack e-commerce web app built with **React (Vite)**, **Node.js/Express**, and **MySQL**.
 
-A beginner-friendly full-stack e-commerce website built for college project submission.
+ShopKart lets users browse products, manage cart and wishlist, place **COD** or **mock UPI** orders, and view order history. Admins can manage products and update order status.
 
-ShopKart lets users browse products, manage a cart and wishlist, place **COD** or **mock UPI** orders, and view order history. Admins can manage products and update order status.
-
-> Online UPI checkout is a **college-project mock** (no real payment gateway).
+> UPI checkout is a **college-project mock** (no real payment gateway).
 
 ---
 
@@ -18,6 +16,7 @@ ShopKart lets users browse products, manage a cart and wishlist, place **COD** o
 | Backend | Node.js + Express.js |
 | Database | MySQL |
 | Auth | JWT + bcrypt |
+| Deploy | Vercel / Netlify (frontend SPA) |
 
 ---
 
@@ -25,16 +24,16 @@ ShopKart lets users browse products, manage a cart and wishlist, place **COD** o
 
 ### User
 - Signup / Login with JWT authentication
-- Browse products with search, category filter, and sort
-- View product details
-- Add / update / remove cart items (saved in MySQL)
-- Wishlist (add/remove, move to cart)
-- Cart + wishlist counts in navbar
-- Checkout with COD or mock UPI (GPay/PhonePe style demo)
-- View order history with payment method + payment status
+- Browse products (search, category filter, sort)
+- Product detail page
+- Cart (add / update / remove)
+- Wishlist (add / remove / move to cart)
+- Checkout with **COD** or **mock UPI**
+- Order history + order details
+- Profile update
+- Light / dark theme
 
 ### Admin
-- Login with admin account
 - Dashboard stats
 - Add / edit / delete products
 - Update order status (`pending`, `confirmed`, `shipped`, `delivered`, `cancelled`)
@@ -47,51 +46,46 @@ ShopKart lets users browse products, manage a cart and wishlist, place **COD** o
 shopkart/
 ├── client/                 # React frontend (Vite)
 │   └── src/
-│       ├── components/     # Navbar, ProductCard, ProtectedRoute
-│       ├── context/        # Auth + Cart state
-│       ├── pages/          # All app pages
-│       └── api.js          # API helper
-└── server/                 # Express backend
-    ├── config/             # MySQL connection
-    ├── middleware/         # JWT auth middleware
-    ├── routes/             # API routes
-    ├── scripts/            # Database setup + seed
-    ├── sql/                # schema.sql + seed.sql
-    └── server.js           # App entry point
+│       ├── components/     # Navbar, ProductCard, ProtectedRoute...
+│       ├── context/        # Auth, Cart, Wishlist, Theme
+│       ├── pages/          # App pages
+│       ├── data/           # Demo catalog (static hosting fallback)
+│       ├── api.js          # API helper
+│       ├── localAuth.js    # Browser auth fallback
+│       └── localShop.js    # Browser cart/orders fallback
+├── server/                 # Express backend
+│   ├── config/             # MySQL connection
+│   ├── middleware/         # JWT auth
+│   ├── routes/             # API routes
+│   ├── scripts/            # DB setup + seed
+│   ├── sql/                # schema + migrations
+│   └── server.js
+├── docs/                   # Project documentation PDF
+├── vercel.json             # Vercel deploy config
+└── netlify.toml            # Netlify deploy config
 ```
 
 ---
 
-## Prerequisites
+## Local Setup
 
-1. **Node.js** (v18 or newer recommended)
-2. **MySQL** installed and running
-3. A MySQL database already created named:
+### Prerequisites
+1. Node.js v18+
+2. MySQL running
+3. Database created:
 
 ```sql
 CREATE DATABASE shopkart;
 ```
 
----
-
-## Setup Instructions
-
-### 1) Backend setup
-
-Open a terminal in the project folder:
+### 1) Backend
 
 ```bash
 cd server
 copy .env.example .env
 ```
 
-On macOS/Linux use:
-
-```bash
-cp .env.example .env
-```
-
-Edit `server/.env` and set your MySQL credentials:
+Edit `server/.env`:
 
 ```env
 PORT=5000
@@ -103,37 +97,15 @@ DB_NAME=shopkart
 JWT_SECRET=any_long_random_secret_string
 ```
 
-Install packages, create tables, and seed sample data:
-
 ```bash
 npm install
 npm run db:setup
 npm run dev
 ```
 
-Backend runs at: **http://localhost:5000**
+API: **http://localhost:5000**
 
-If your database already exists from an older ShopKart version, also run:
-
-```bash
-cd server
-npm run db:migrate
-```
-
-Or run this SQL in MySQL:
-
-```sql
-SOURCE server/sql/migrate_wishlist_payment.sql;
-```
-
-`db:setup` will:
-- create tables (`users`, `products`, `cart_items`, `orders`, `order_items`)
-- insert **12 sample products**
-- create the default admin account
-
-### 2) Frontend setup
-
-Open a **second** terminal:
+### 2) Frontend
 
 ```bash
 cd client
@@ -141,7 +113,7 @@ npm install
 npm run dev
 ```
 
-Frontend runs at: **http://localhost:5173**
+App: **http://localhost:5173**
 
 ---
 
@@ -152,82 +124,87 @@ Frontend runs at: **http://localhost:5173**
 | Email | `admin@shopkart.com` |
 | Password | `admin123` |
 
-Use this account to open the **Admin** page.
-
 ---
 
-## How to Test the Project
+## How to Test
 
 1. Open http://localhost:5173
-2. Create a normal user account from **Sign up**
-3. Browse **Products**, open a product, click **Add to cart**
-4. Open **Cart**, change quantity, then go to **Checkout**
-5. Enter address + 10-digit phone and place a **COD** order
-6. Check **Orders** and open order details
-7. Logout, login as admin, open **Admin**
-8. Add/edit a product and update an order status
+2. Sign up a normal user
+3. Browse products → Add to bag / Wishlist
+4. Open Cart → Checkout (COD or mock UPI)
+5. Check Orders
+6. Logout → login as admin → open Admin
 
 ---
 
-## Main Pages / Routes
+## Routes
 
 | Route | Page |
 |-------|------|
 | `/` | Home |
-| `/products` | Product list (search / filter / sort) |
+| `/products` | Product list |
 | `/products/:id` | Product detail |
 | `/cart` | Cart (login required) |
-| `/checkout` | Checkout COD (login required) |
+| `/wishlist` | Wishlist (login required) |
+| `/checkout` | Checkout (login required) |
 | `/login` | Login |
 | `/signup` | Signup |
-| `/orders` | Order history (login required) |
-| `/orders/:id` | Order details (login required) |
+| `/profile` | Profile (login required) |
+| `/orders` | Orders (login required) |
+| `/orders/:id` | Order details |
 | `/admin` | Admin panel (admin only) |
+| `/about` | About |
 
 ---
 
-## Important API Endpoints
+## Deploy Notes
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/signup` | Create user |
-| POST | `/api/auth/login` | Login and get JWT |
-| GET | `/api/products` | List products |
-| GET | `/api/products/:id` | Product details |
-| GET/POST/PUT/DELETE | `/api/cart` | Cart operations |
-| POST | `/api/orders` | Place COD order |
-| GET | `/api/orders` | User order history |
-| GET | `/api/orders/:id` | Order details |
-| `/api/admin/*` | Admin product + order management |
+### Vercel (recommended when Netlify credits are paused)
+- Connect the GitHub repo
+- Root can stay at repository root (`vercel.json` builds `client`)
+- SPA rewrite is already configured
+
+### Static hosting fallback
+If no Express/MySQL backend is connected:
+- Products load from `client/src/data/demoCatalog.js` (42 products)
+- Auth / cart / wishlist / orders use browser `localStorage`
+
+For a full production API, host Express + MySQL separately and set `VITE_API_URL`.
 
 ---
 
-## Notes for Evaluation
+## Documentation
 
-- Cart and orders are stored in **MySQL**, not only in browser memory
-- Protected pages redirect guests to Login
-- Only **Cash on Delivery** is supported (no Razorpay/Stripe/etc.)
-- UI is responsive for mobile and desktop
+Project explanation + interview Q&A PDF:
+
+`docs/ShopKart_Project_Documentation.pdf`
+
+Regenerate PDF (optional):
+
+```bash
+pip install fpdf2
+python docs/generate_shopkart_pdf.py
+```
 
 ---
 
 ## Troubleshooting
 
-**Backend says MySQL connection failed**
-- Check username/password in `server/.env`
-- Confirm MySQL service is running
-- Confirm database `shopkart` exists
+**MySQL connection failed**
+- Check `server/.env`
+- Confirm MySQL is running and database `shopkart` exists
 
-**Frontend cannot load products**
-- Make sure backend is running on port 5000
-- Restart both servers after changing `.env`
+**Port 5000 already in use**
+- Stop the other process using port 5000, then restart the server
+
+**Frontend cannot load products (local)**
+- Start backend on port 5000
 
 **Admin page not visible**
 - Login with `admin@shopkart.com` / `admin123`
-- Normal users cannot access `/admin`
 
 ---
 
 ## Author
 
-**ShopKart** full-stack e-commerce website.
+ShopKart — full-stack e-commerce college project.
