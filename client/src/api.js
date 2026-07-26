@@ -45,18 +45,37 @@ export async function apiRequest(path, options = {}) {
   } catch {
     const demo = tryDemoFallback(path, method);
     if (demo) return demo;
-    throw new Error("Cannot connect to server. Is the backend running?");
+    throw new Error(
+      import.meta.env.DEV
+        ? "Cannot connect to server. Start it with: cd server && npm run dev"
+        : "Cannot connect right now. Please try again."
+    );
   }
 
   const contentType = response.headers.get("content-type") || "";
-  const data = contentType.includes("application/json")
-    ? await response.json().catch(() => ({}))
-    : {};
+  const isJson = contentType.includes("application/json");
+  const data = isJson ? await response.json().catch(() => ({})) : {};
 
-  if (!response.ok || !looksLikeApiPayload(path, data)) {
+  if (!isJson || !response.ok || !looksLikeApiPayload(path, data)) {
     const demo = tryDemoFallback(path, method);
     if (demo) return demo;
+
+    if (!isJson) {
+      throw new Error(
+        import.meta.env.DEV
+          ? "Cannot reach the ShopKart API. Start the backend: cd server && npm run dev"
+          : "Authentication service is unavailable. Please try again."
+      );
+    }
+
     throw new Error(data.message || "Something went wrong");
+  }
+
+  if (
+    (path === "/auth/login" || path === "/auth/signup") &&
+    (!data.token || !data.user)
+  ) {
+    throw new Error("Login failed. Please try again.");
   }
 
   return data;

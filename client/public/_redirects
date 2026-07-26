@@ -1,1 +1,2 @@
+# Prefer netlify.toml for /api routing. SPA fallback only:
 /*    /index.html   200

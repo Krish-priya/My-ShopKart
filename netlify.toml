@@ -1,18 +1,30 @@
 [build]
-  command = "npm install --prefix client && npm run build --prefix client"
+  command = "npm install && npm install --prefix client && npm run build --prefix client"
   publish = "client/dist"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "22"
 
-# Do NOT send /api/* to the React app (that broke product loading)
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@netlify/blobs", "bcryptjs", "jsonwebtoken"]
+
+# Auth API → Netlify Function (signup/login work on the live site)
+[[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/auth/:splat"
+  status = 200
+  force = true
+
+# Other /api calls are not available on Netlify (demo catalog handles products)
 [[redirects]]
   from = "/api/*"
   to = "/404.html"
   status = 404
   force = true
 
-# React Router SPA fallback for real pages only
+# React Router SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
