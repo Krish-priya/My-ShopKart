@@ -11,3 +11,5 @@ server/.env
 .netlify/
 **/razorpay*.csv
 
+.vercel
+.env*
