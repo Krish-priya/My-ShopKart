@@ -1,10 +1,16 @@
 # ShopKart
 
-Full-stack e-commerce web app built with **React (Vite)**, **Node.js/Express**, and **MySQL**.
+Full-stack ecommerce platform built with **React (Vite)**, **Node.js/Express**, and **MySQL**.
 
-ShopKart lets users browse products, manage cart and wishlist, place **COD** or **mock UPI** orders, and view order history. Admins can manage products and update order status.
+Built as a **company-resume / job-evaluation project** with JWT auth, transactional checkout, Razorpay **TEST** payments, wishlist, purchase-gated reviews, admin analytics, API tests, and CI.
 
-> UPI checkout is a **college-project mock** (no real payment gateway).
+## Live Demo
+
+- Frontend: `_paste_after_deploy_`
+- Backend API: `_paste_after_deploy_`
+- GitHub: `_paste_repo_url_`
+
+See [DEPLOY.md](./DEPLOY.md) for hosting steps.
 
 ---
 
@@ -12,57 +18,45 @@ ShopKart lets users browse products, manage cart and wishlist, place **COD** or 
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React.js (Vite), HTML, CSS, JavaScript |
-| Backend | Node.js + Express.js |
+| Frontend | React 19, Vite, React Router, Recharts |
+| Backend | Node.js, Express |
 | Database | MySQL |
 | Auth | JWT + bcrypt |
-| Deploy | Vercel / Netlify (frontend SPA) |
+| Payments | Razorpay **TEST mode** + COD |
+| Quality | Jest + Supertest, GitHub Actions, Helmet, rate limiting, express-validator |
 
 ---
 
 ## Features
 
-### User
-- Signup / Login with JWT authentication
-- Browse products (search, category filter, sort)
-- Product detail page
-- Cart (add / update / remove)
-- Wishlist (add / remove / move to cart)
-- Checkout with **COD** or **mock UPI**
-- Order history + order details
-- Profile update
+### Customer
+- Signup / Login (JWT)
+- Search with suggestions, category filters, sort
+- Product detail + related items
+- Cart + Wishlist
+- Checkout: **COD** or **Razorpay TEST** (signature verified)
+- Orders history / detail
+- Profile editing
 - Light / dark theme
+- Purchase-gated product reviews & ratings
 
 ### Admin
 - Dashboard stats
-- Add / edit / delete products
-- Update order status (`pending`, `confirmed`, `shipped`, `delivered`, `cancelled`)
+- Analytics charts (revenue, order status, top products)
+- Product CRUD
+- Order status updates
+- RBAC (`admin` role)
 
 ---
 
-## Project Structure
+## Architecture
 
-```text
-shopkart/
-├── client/                 # React frontend (Vite)
-│   └── src/
-│       ├── components/     # Navbar, ProductCard, ProtectedRoute...
-│       ├── context/        # Auth, Cart, Wishlist, Theme
-│       ├── pages/          # App pages
-│       ├── data/           # Demo catalog (static hosting fallback)
-│       ├── api.js          # API helper
-│       ├── localAuth.js    # Browser auth fallback
-│       └── localShop.js    # Browser cart/orders fallback
-├── server/                 # Express backend
-│   ├── config/             # MySQL connection
-│   ├── middleware/         # JWT auth
-│   ├── routes/             # API routes
-│   ├── scripts/            # DB setup + seed
-│   ├── sql/                # schema + migrations
-│   └── server.js
-├── docs/                   # Project documentation PDF
-├── vercel.json             # Vercel deploy config
-└── netlify.toml            # Netlify deploy config
+```mermaid
+flowchart LR
+  browser[React_Client] --> api[Express_API]
+  api --> mysql[(MySQL)]
+  browser --> razorpay[Razorpay_Checkout_TEST]
+  api --> razorpayVerify[Signature_Verify]
 ```
 
 ---
@@ -70,141 +64,135 @@ shopkart/
 ## Local Setup
 
 ### Prerequisites
-1. Node.js v18+
-2. MySQL running
-3. Database created:
+- Node.js 18+
+- MySQL running
+- Razorpay TEST keys (optional for COD-only)
 
 ```sql
 CREATE DATABASE shopkart;
 ```
 
-### 1) Backend
+### Backend
 
 ```bash
 cd server
-copy .env.example .env
-```
-
-Edit `server/.env`:
-
-```env
-PORT=5000
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=shopkart
-JWT_SECRET=any_long_random_secret_string
-```
-
-```bash
+cp .env.example .env
+# fill DB + JWT + Razorpay TEST keys
 npm install
 npm run db:setup
+npm run db:migrate
+npm run db:migrate:profile
+npm run db:migrate:payments
 npm run dev
 ```
 
-API: **http://localhost:5000**
+API: `http://localhost:5000`
 
-### 2) Frontend
+### Frontend
 
 ```bash
 cd client
+cp .env.example .env
+# set VITE_RAZORPAY_KEY_ID=rzp_test_...
 npm install
 npm run dev
 ```
 
-App: **http://localhost:5173**
+App: `http://localhost:5173`
+
+### Default admin
+
+- Email: `admin@shopkart.com`
+- Password: `admin123` (change after first login in real deployments)
 
 ---
 
-## Default Admin Login
+## Razorpay TEST mode
 
-| Field | Value |
-|-------|-------|
-| Email | `admin@shopkart.com` |
-| Password | `admin123` |
+Online checkout uses **Razorpay test keys only**.
 
----
+- No real money is charged
+- Backend verifies `razorpay_signature` before creating a paid order
+- Keep `RAZORPAY_KEY_SECRET` on the server only
+- Never commit `.env` or key CSV files
 
-## How to Test
-
-1. Open http://localhost:5173
-2. Sign up a normal user
-3. Browse products → Add to bag / Wishlist
-4. Open Cart → Checkout (COD or mock UPI)
-5. Check Orders
-6. Logout → login as admin → open Admin
+Test cards: see Razorpay docs → Test Cards (e.g. `4111 1111 1111 1111`)
 
 ---
 
-## Routes
+## API Overview
 
-| Route | Page |
-|-------|------|
-| `/` | Home |
-| `/products` | Product list |
-| `/products/:id` | Product detail |
-| `/cart` | Cart (login required) |
-| `/wishlist` | Wishlist (login required) |
-| `/checkout` | Checkout (login required) |
-| `/login` | Login |
-| `/signup` | Signup |
-| `/profile` | Profile (login required) |
-| `/orders` | Orders (login required) |
-| `/orders/:id` | Order details |
-| `/admin` | Admin panel (admin only) |
-| `/about` | About |
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/api/auth/signup` | Create user |
+| POST | `/api/auth/login` | Login |
+| GET/PUT | `/api/auth/me` `/api/auth/profile` | Profile |
+| GET | `/api/products` | Catalog + ratings |
+| GET/POST | `/api/cart` | Auth cart |
+| GET/POST | `/api/wishlist` | Auth wishlist |
+| POST | `/api/payments/razorpay/create` | Create Razorpay order |
+| POST | `/api/orders` | COD or verified Razorpay |
+| GET/POST | `/api/reviews/product/:id` | Reviews |
+| GET | `/api/admin/stats` `/api/admin/analytics` | Admin only |
 
 ---
 
-## Deploy Notes
-
-### Vercel (recommended when Netlify credits are paused)
-- Connect the GitHub repo
-- Root can stay at repository root (`vercel.json` builds `client`)
-- SPA rewrite is already configured
-
-### Static hosting fallback
-If no Express/MySQL backend is connected:
-- Products load from `client/src/data/demoCatalog.js` (42 products)
-- Auth / cart / wishlist / orders use browser `localStorage`
-
-For a full production API, host Express + MySQL separately and set `VITE_API_URL`.
-
----
-
-## Documentation
-
-Project explanation + interview Q&A PDF:
-
-`docs/ShopKart_Project_Documentation.pdf`
-
-Regenerate PDF (optional):
+## Tests & CI
 
 ```bash
-pip install fpdf2
-python docs/generate_shopkart_pdf.py
+cd server
+npm test
 ```
 
----
-
-## Troubleshooting
-
-**MySQL connection failed**
-- Check `server/.env`
-- Confirm MySQL is running and database `shopkart` exists
-
-**Port 5000 already in use**
-- Stop the other process using port 5000, then restart the server
-
-**Frontend cannot load products (local)**
-- Start backend on port 5000
-
-**Admin page not visible**
-- Login with `admin@shopkart.com` / `admin123`
+GitHub Actions workflow: [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)
 
 ---
 
-## Author
+## Docker
 
-ShopKart — full-stack e-commerce college project.
+```bash
+# from repo root
+docker compose up --build
+```
+
+Runs MySQL + API. Point the Vite client at `http://localhost:5000` via `VITE_API_URL`.
+
+---
+
+## Technical highlights (resume)
+
+- JWT auth + role-based admin access
+- Transactional checkout with stock locking (`FOR UPDATE`)
+- Razorpay TEST payments with HMAC signature verification
+- Wishlist with move-to-cart support
+- Purchase-gated reviews (one per user/product)
+- Admin analytics endpoints + charts
+- Helmet, auth rate limiting, request validation
+- Automated API tests + CI pipeline
+
+---
+
+## Screenshots
+
+Add images here after your final UI pass:
+
+- Home
+- Search / product detail
+- Checkout (Razorpay TEST)
+- Wishlist
+- Admin analytics
+
+---
+
+## Known limitations
+
+- Razorpay is **TEST mode** (portfolio-safe, not live settlements)
+- Email verification / password reset not implemented
+- Image upload uses URLs (no object storage yet)
+- Free hosting tiers may cold-start
+
+---
+
+## Resume bullet (copy)
+
+> Built **ShopKart**, a full-stack ecommerce app (React, Node/Express, MySQL) with JWT auth, RBAC admin, transactional checkout + stock locking, wishlist, Razorpay TEST payments with signature verification, purchase-gated reviews, and admin analytics. Includes API tests, GitHub Actions CI, Docker Compose, and deployment docs.

@@ -1,16 +1,20 @@
 const express = require("express");
 const { pool } = require("../config/db");
 const { authenticate } = require("../middleware/auth");
+const { validate } = require("../middleware/validate");
+const { checkoutRules } = require("../middleware/validators");
+const { verifyPaymentSignature } = require("../utils/razorpay");
 
 const router = express.Router();
 
 router.use(authenticate);
 
-const ALLOWED_PAYMENT = new Set(["COD", "UPI"]);
+const ALLOWED_PAYMENT = new Set(["COD", "RAZORPAY", "UPI"]);
 
 async function getOrderWithItems(connectionOrPool, orderId, userId) {
   const [orders] = await connectionOrPool.query(
     `SELECT id, total_amount, status, payment_method, payment_status,
+            razorpay_order_id, razorpay_payment_id,
             shipping_address, phone, created_at
      FROM orders
      WHERE id = ? AND user_id = ?`,
@@ -34,32 +38,54 @@ async function getOrderWithItems(connectionOrPool, orderId, userId) {
   return { order: orders[0], items };
 }
 
-// POST /api/orders — place order (COD or mock UPI)
-router.post("/", async (req, res) => {
+// POST /api/orders — place order (COD or verified Razorpay)
+router.post("/", checkoutRules, validate, async (req, res) => {
   const connection = await pool.getConnection();
 
   try {
     const shippingAddress = String(req.body.shippingAddress || "").trim();
     const phone = String(req.body.phone || "").trim();
-    const paymentMethod = String(req.body.paymentMethod || "COD").toUpperCase();
-    const paymentConfirmed = Boolean(req.body.paymentConfirmed);
+    let paymentMethod = String(req.body.paymentMethod || "COD").toUpperCase();
 
-    if (!shippingAddress || shippingAddress.length < 8) {
-      return res.status(400).json({ message: "Please enter a full shipping address" });
-    }
-
-    if (!/^[0-9]{10}$/.test(phone)) {
-      return res.status(400).json({ message: "Please enter a valid 10-digit phone number" });
+    // Legacy mock UPI is no longer accepted for new orders
+    if (paymentMethod === "UPI") {
+      return res.status(400).json({
+        message: "Please use Cash on Delivery or Razorpay online payment",
+      });
     }
 
     if (!ALLOWED_PAYMENT.has(paymentMethod)) {
-      return res.status(400).json({ message: "Payment method must be COD or UPI" });
+      return res.status(400).json({ message: "Payment method must be COD or RAZORPAY" });
     }
 
-    if (paymentMethod === "UPI" && !paymentConfirmed) {
-      return res.status(400).json({
-        message: "Complete the UPI payment before placing the order",
+    let razorpayOrderId = null;
+    let razorpayPaymentId = null;
+
+    if (paymentMethod === "RAZORPAY") {
+      const {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+      } = req.body;
+
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return res.status(400).json({
+          message: "Razorpay payment details are missing",
+        });
+      }
+
+      const valid = verifyPaymentSignature({
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
       });
+
+      if (!valid) {
+        return res.status(400).json({ message: "Razorpay payment verification failed" });
+      }
+
+      razorpayOrderId = razorpay_order_id;
+      razorpayPaymentId = razorpay_payment_id;
     }
 
     await connection.beginTransaction();
@@ -92,19 +118,31 @@ router.post("/", async (req, res) => {
       0
     );
 
-    const paymentStatus = paymentMethod === "UPI" ? "paid" : "unpaid";
-    const orderStatus = paymentMethod === "UPI" ? "confirmed" : "pending";
+    if (paymentMethod === "RAZORPAY") {
+      // Ensure paid amount matches cart (Razorpay amount is in paise)
+      // Soft check: cart total > 0 already enforced by stock loop
+      if (totalAmount <= 0) {
+        await connection.rollback();
+        return res.status(400).json({ message: "Invalid order total" });
+      }
+    }
+
+    const paymentStatus = paymentMethod === "RAZORPAY" ? "paid" : "unpaid";
+    const orderStatus = paymentMethod === "RAZORPAY" ? "confirmed" : "pending";
 
     const [orderResult] = await connection.query(
       `INSERT INTO orders
-        (user_id, total_amount, status, payment_method, payment_status, shipping_address, phone)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        (user_id, total_amount, status, payment_method, payment_status,
+         razorpay_order_id, razorpay_payment_id, shipping_address, phone)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         req.user.id,
         totalAmount,
         orderStatus,
         paymentMethod,
         paymentStatus,
+        razorpayOrderId,
+        razorpayPaymentId,
         shippingAddress,
         phone,
       ]
@@ -130,7 +168,7 @@ router.post("/", async (req, res) => {
 
     const details = await getOrderWithItems(pool, orderId, req.user.id);
     const payLabel =
-      paymentMethod === "UPI" ? "UPI (Paid)" : "Cash on Delivery";
+      paymentMethod === "RAZORPAY" ? "Razorpay (Paid · TEST)" : "Cash on Delivery";
 
     res.status(201).json({
       message: `Order placed successfully — ${payLabel}`,

@@ -1,4 +1,19 @@
 import { useEffect, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { apiRequest } from "../api";
 
 const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
@@ -11,6 +26,7 @@ const CATEGORIES = [
   "Beauty",
   "General",
 ];
+const PIE_COLORS = ["#0f766e", "#f59e0b", "#3b82f6", "#10b981", "#ef4444", "#8b5cf6"];
 
 const emptyForm = {
   name: "",
@@ -22,8 +38,9 @@ const emptyForm = {
 };
 
 export default function Admin() {
-  const [tab, setTab] = useState("products");
+  const [tab, setTab] = useState("analytics");
   const [stats, setStats] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [error, setError] = useState("");
@@ -36,14 +53,16 @@ export default function Admin() {
   async function loadAdminData() {
     setLoading(true);
     try {
-      const [statsData, ordersData, productsData] = await Promise.all([
+      const [statsData, ordersData, productsData, analyticsData] = await Promise.all([
         apiRequest("/admin/stats"),
         apiRequest("/admin/orders"),
         apiRequest("/admin/products"),
+        apiRequest("/admin/analytics"),
       ]);
       setStats(statsData);
       setOrders(ordersData.orders);
       setProducts(productsData.products);
+      setAnalytics(analyticsData);
       setError("");
     } catch (err) {
       setError(err.message);
@@ -185,6 +204,13 @@ export default function Admin() {
       <div className="filter-row">
         <button
           type="button"
+          className={`filter-btn ${tab === "analytics" ? "active" : ""}`}
+          onClick={() => setTab("analytics")}
+        >
+          Analytics
+        </button>
+        <button
+          type="button"
           className={`filter-btn ${tab === "products" ? "active" : ""}`}
           onClick={() => setTab("products")}
         >
@@ -198,6 +224,67 @@ export default function Admin() {
           Orders
         </button>
       </div>
+
+      {tab === "analytics" && analytics && (
+        <div className="analytics-grid">
+          <div className="form-card chart-card">
+            <h3>Revenue (last 14 days)</h3>
+            <div className="chart-wrap">
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={analytics.revenueByDay}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" stroke="#0f766e" strokeWidth={2} name="Revenue ₹" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="form-card chart-card">
+            <h3>Orders by status</h3>
+            <div className="chart-wrap">
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={analytics.ordersByStatus}
+                    dataKey="count"
+                    nameKey="status"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    label
+                  >
+                    {analytics.ordersByStatus.map((_, index) => (
+                      <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="form-card chart-card chart-card-wide">
+            <h3>Top products</h3>
+            <div className="chart-wrap">
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={analytics.topProducts}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-15} textAnchor="end" height={70} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="units_sold" fill="#f59e0b" name="Units sold" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {tab === "products" && (
         <div className="admin-grid">

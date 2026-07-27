@@ -1,18 +1,30 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { apiRequest } from "../api";
+import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 
-const MOCK_UPI_ID = "shopkart@upi";
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { items, total, loading, clearCartState } = useCart();
-  const [shippingAddress, setShippingAddress] = useState("");
-  const [phone, setPhone] = useState("");
+  const [shippingAddress, setShippingAddress] = useState(user?.address || "");
+  const [phone, setPhone] = useState(user?.phone || "");
   const [paymentMethod, setPaymentMethod] = useState("COD");
-  const [upiPaid, setUpiPaid] = useState(false);
-  const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,13 +36,94 @@ export default function Checkout() {
     return <Navigate to="/cart" replace />;
   }
 
-  async function handleMockPay() {
-    setPaying(true);
-    setError("");
-    // Simulate a short UPI/GPay/PhonePe confirmation delay
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    setUpiPaid(true);
-    setPaying(false);
+  async function placeCodOrder(trimmedAddress, trimmedPhone) {
+    const data = await apiRequest("/orders", {
+      method: "POST",
+      body: JSON.stringify({
+        shippingAddress: trimmedAddress,
+        phone: trimmedPhone,
+        paymentMethod: "COD",
+      }),
+    });
+
+    navigate(`/orders/${data.orderId}`, {
+      state: {
+        success: `Order #${data.orderId} placed — Cash on Delivery.`,
+      },
+      replace: true,
+    });
+    clearCartState();
+  }
+
+  async function placeRazorpayOrder(trimmedAddress, trimmedPhone) {
+    const ready = await loadRazorpayScript();
+    if (!ready) {
+      throw new Error("Could not load Razorpay checkout. Check your network.");
+    }
+
+    const paymentOrder = await apiRequest("/payments/razorpay/create", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+
+    const key =
+      import.meta.env.VITE_RAZORPAY_KEY_ID || paymentOrder.key;
+
+    await new Promise((resolve, reject) => {
+      const rzp = new window.Razorpay({
+        key,
+        amount: paymentOrder.amount,
+        currency: paymentOrder.currency,
+        name: "ShopKart",
+        description: "Order payment (TEST mode)",
+        order_id: paymentOrder.razorpayOrderId,
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+          contact: trimmedPhone,
+        },
+        theme: { color: "#0f766e" },
+        handler: async (response) => {
+          try {
+            const data = await apiRequest("/orders", {
+              method: "POST",
+              body: JSON.stringify({
+                shippingAddress: trimmedAddress,
+                phone: trimmedPhone,
+                paymentMethod: "RAZORPAY",
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            navigate(`/orders/${data.orderId}`, {
+              state: {
+                success: `Order #${data.orderId} paid via Razorpay (TEST).`,
+              },
+              replace: true,
+            });
+            clearCartState();
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        },
+        modal: {
+          ondismiss: () => reject(new Error("Payment cancelled")),
+        },
+      });
+
+      rzp.on("payment.failed", (response) => {
+        reject(
+          new Error(
+            response?.error?.description || "Razorpay payment failed"
+          )
+        );
+      });
+
+      rzp.open();
+    });
   }
 
   async function handleSubmit(e) {
@@ -53,38 +146,14 @@ export default function Checkout() {
       return;
     }
 
-    if (paymentMethod === "UPI" && !upiPaid) {
-      setError("Complete the UPI payment first, then place your order");
-      setSubmitting(false);
-      return;
-    }
-
     try {
-      const data = await apiRequest("/orders", {
-        method: "POST",
-        body: JSON.stringify({
-          shippingAddress: trimmedAddress,
-          phone: trimmedPhone,
-          paymentMethod,
-          paymentConfirmed: paymentMethod === "UPI" ? upiPaid : false,
-        }),
-      });
-
-      const payNote =
-        data.paymentMethod === "UPI"
-          ? "paid via UPI"
-          : "Cash on Delivery";
-
-      navigate(`/orders/${data.orderId}`, {
-        state: {
-          success: `Order #${data.orderId} placed — ${payNote}.`,
-        },
-        replace: true,
-      });
-
-      clearCartState();
+      if (paymentMethod === "RAZORPAY") {
+        await placeRazorpayOrder(trimmedAddress, trimmedPhone);
+      } else {
+        await placeCodOrder(trimmedAddress, trimmedPhone);
+      }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Checkout failed");
       setSubmitting(false);
     }
   }
@@ -94,7 +163,7 @@ export default function Checkout() {
       <div>
         <div className="section-heading">
           <h2>Checkout</h2>
-          <p>Choose COD or pay online with UPI (demo flow).</p>
+          <p>Pay with Cash on Delivery or Razorpay (TEST mode).</p>
         </div>
 
         <form className="form-card" onSubmit={handleSubmit}>
@@ -131,10 +200,7 @@ export default function Checkout() {
                 name="paymentMethod"
                 value="COD"
                 checked={paymentMethod === "COD"}
-                onChange={() => {
-                  setPaymentMethod("COD");
-                  setUpiPaid(false);
-                }}
+                onChange={() => setPaymentMethod("COD")}
               />
               <span>
                 <strong>Cash on Delivery</strong>
@@ -142,17 +208,17 @@ export default function Checkout() {
               </span>
             </label>
 
-            <label className={`pay-option ${paymentMethod === "UPI" ? "selected" : ""}`}>
+            <label className={`pay-option ${paymentMethod === "RAZORPAY" ? "selected" : ""}`}>
               <input
                 type="radio"
                 name="paymentMethod"
-                value="UPI"
-                checked={paymentMethod === "UPI"}
-                onChange={() => setPaymentMethod("UPI")}
+                value="RAZORPAY"
+                checked={paymentMethod === "RAZORPAY"}
+                onChange={() => setPaymentMethod("RAZORPAY")}
               />
               <span>
-                <strong>UPI / GPay / PhonePe</strong>
-                <small>Mock online payment for demo</small>
+                <strong>Online · Razorpay</strong>
+                <small>UPI / Cards / Wallets · TEST mode</small>
               </span>
             </label>
           </fieldset>
@@ -164,35 +230,21 @@ export default function Checkout() {
             </div>
           )}
 
-          {paymentMethod === "UPI" && (
+          {paymentMethod === "RAZORPAY" && (
             <div className="upi-panel">
               <div className="upi-apps">
                 <span>GPay</span>
                 <span>PhonePe</span>
+                <span>Cards</span>
                 <span>UPI</span>
-              </div>
-              <p className="upi-id">
-                Pay to <strong>{MOCK_UPI_ID}</strong>
-              </p>
-              <div className="upi-qr" aria-hidden="true">
-                <div className="upi-qr-inner">QR</div>
-                <p>Scan mock QR · demo only</p>
               </div>
               <p className="upi-amount">
                 Amount: <strong>₹{Number(total).toLocaleString("en-IN")}</strong>
               </p>
-              {upiPaid ? (
-                <p className="success-text">Payment successful (mock). You can place the order.</p>
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn-accent"
-                  onClick={handleMockPay}
-                  disabled={paying}
-                >
-                  {paying ? "Processing payment..." : "Pay now"}
-                </button>
-              )}
+              <p className="pay-note">
+                Razorpay opens in TEST mode. No real money is charged.
+                Use Razorpay test cards/UPI from their docs.
+              </p>
             </div>
           )}
 
@@ -201,12 +253,14 @@ export default function Checkout() {
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={submitting || items.length === 0 || (paymentMethod === "UPI" && !upiPaid)}
+            disabled={submitting || items.length === 0}
           >
             {submitting
-              ? "Placing order..."
-              : paymentMethod === "UPI"
-                ? "Place paid order"
+              ? paymentMethod === "RAZORPAY"
+                ? "Opening Razorpay..."
+                : "Placing order..."
+              : paymentMethod === "RAZORPAY"
+                ? "Pay with Razorpay"
                 : "Place COD order"}
           </button>
 
@@ -218,30 +272,26 @@ export default function Checkout() {
 
       <aside className="checkout-summary">
         <h3>Order summary</h3>
-        {loading ? (
-          <p>Loading cart...</p>
-        ) : (
-          <>
-            <div className="checkout-items">
-              {items.map((item) => (
-                <div key={item.id} className="checkout-item">
-                  <img src={item.image_url} alt={item.name} />
-                  <div>
-                    <strong>{item.name}</strong>
-                    <p>
-                      Qty {item.quantity} × ₹{Number(item.price).toLocaleString("en-IN")}
-                    </p>
-                  </div>
-                  <span>₹{Number(item.line_total).toLocaleString("en-IN")}</span>
+        <>
+          <div className="checkout-items">
+            {items.map((item) => (
+              <div key={item.id} className="checkout-item">
+                <img src={item.image_url} alt={item.name} />
+                <div>
+                  <strong>{item.name}</strong>
+                  <p>
+                    Qty {item.quantity} × ₹{Number(item.price).toLocaleString("en-IN")}
+                  </p>
                 </div>
-              ))}
-            </div>
-            <div className="checkout-total">
-              <span>Total</span>
-              <strong>₹{Number(total).toLocaleString("en-IN")}</strong>
-            </div>
-          </>
-        )}
+                <span>₹{Number(item.line_total).toLocaleString("en-IN")}</span>
+              </div>
+            ))}
+          </div>
+          <div className="checkout-total">
+            <span>Total</span>
+            <strong>₹{Number(total).toLocaleString("en-IN")}</strong>
+          </div>
+        </>
       </aside>
     </section>
   );

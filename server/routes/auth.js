@@ -3,12 +3,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { pool } = require("../config/db");
 const { authenticate } = require("../middleware/auth");
+const { validate } = require("../middleware/validate");
+const { signupRules, loginRules, profileRules } = require("../middleware/validators");
 
 const router = express.Router();
-
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 function createToken(user) {
   if (!process.env.JWT_SECRET) {
@@ -34,24 +32,11 @@ function publicUser(row) {
   };
 }
 
-// POST /api/auth/signup
-router.post("/signup", async (req, res) => {
+router.post("/signup", signupRules, validate, async (req, res) => {
   try {
     const name = String(req.body.name || "").trim();
     const email = String(req.body.email || "").trim().toLowerCase();
     const password = String(req.body.password || "");
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "Name, email, and password are required" });
-    }
-
-    if (!isValidEmail(email)) {
-      return res.status(400).json({ message: "Please enter a valid email address" });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
-    }
 
     const [existing] = await pool.query("SELECT id FROM users WHERE email = ?", [email]);
     if (existing.length > 0) {
@@ -73,11 +58,9 @@ router.post("/signup", async (req, res) => {
       role: "user",
     };
 
-    const token = createToken(user);
-
     res.status(201).json({
       message: "Account created successfully",
-      token,
+      token: createToken(user),
       user,
     });
   } catch (error) {
@@ -86,15 +69,10 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// POST /api/auth/login
-router.post("/login", async (req, res) => {
+router.post("/login", loginRules, validate, async (req, res) => {
   try {
     const email = String(req.body.email || "").trim().toLowerCase();
     const password = String(req.body.password || "");
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    }
 
     const [rows] = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
     if (rows.length === 0) {
@@ -108,11 +86,9 @@ router.post("/login", async (req, res) => {
     }
 
     const user = publicUser(userRow);
-    const token = createToken(user);
-
     res.json({
       message: "Login successful",
-      token,
+      token: createToken(user),
       user,
     });
   } catch (error) {
@@ -121,7 +97,6 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// GET /api/auth/me
 router.get("/me", authenticate, async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -140,8 +115,7 @@ router.get("/me", authenticate, async (req, res) => {
   }
 });
 
-// PUT /api/auth/profile
-router.put("/profile", authenticate, async (req, res) => {
+router.put("/profile", authenticate, profileRules, validate, async (req, res) => {
   try {
     const name = String(req.body.name || "").trim();
     const email = String(req.body.email || "").trim().toLowerCase();
@@ -149,18 +123,6 @@ router.put("/profile", authenticate, async (req, res) => {
     const address = String(req.body.address || "").trim();
     const currentPassword = String(req.body.currentPassword || "");
     const newPassword = String(req.body.newPassword || "");
-
-    if (!name || name.length < 2) {
-      return res.status(400).json({ message: "Please enter your full name" });
-    }
-
-    if (!isValidEmail(email)) {
-      return res.status(400).json({ message: "Please enter a valid email address" });
-    }
-
-    if (phone && !/^[0-9]{10}$/.test(phone)) {
-      return res.status(400).json({ message: "Phone must be a 10-digit number" });
-    }
 
     const [rows] = await pool.query("SELECT * FROM users WHERE id = ?", [req.user.id]);
     if (rows.length === 0) {
@@ -193,10 +155,6 @@ router.put("/profile", authenticate, async (req, res) => {
         return res.status(401).json({ message: "Current password is incorrect" });
       }
 
-      if (newPassword.length < 6) {
-        return res.status(400).json({ message: "New password must be at least 6 characters" });
-      }
-
       nextPasswordHash = await bcrypt.hash(newPassword, 10);
     }
 
@@ -213,13 +171,10 @@ router.put("/profile", authenticate, async (req, res) => {
     );
 
     const user = publicUser(updatedRows[0]);
-    // Refresh JWT if email changed
-    const token = createToken(user);
-
     res.json({
       message: "Profile updated successfully",
       user,
-      token,
+      token: createToken(user),
     });
   } catch (error) {
     console.error("Profile update error:", error);

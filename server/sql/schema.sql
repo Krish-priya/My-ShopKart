@@ -51,8 +51,10 @@ CREATE TABLE IF NOT EXISTS orders (
   user_id INT NOT NULL,
   total_amount DECIMAL(10, 2) NOT NULL,
   status ENUM('pending', 'confirmed', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
-  payment_method ENUM('COD', 'UPI') NOT NULL DEFAULT 'COD',
+  payment_method ENUM('COD', 'UPI', 'RAZORPAY') NOT NULL DEFAULT 'COD',
   payment_status ENUM('unpaid', 'paid') NOT NULL DEFAULT 'unpaid',
+  razorpay_order_id VARCHAR(100) NULL,
+  razorpay_payment_id VARCHAR(100) NULL,
   shipping_address TEXT NOT NULL,
   phone VARCHAR(20) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -67,4 +69,16 @@ CREATE TABLE IF NOT EXISTS order_items (
   price DECIMAL(10, 2) NOT NULL,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+CREATE TABLE IF NOT EXISTS reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  product_id INT NOT NULL,
+  rating TINYINT NOT NULL,
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_user_product_review (user_id, product_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );

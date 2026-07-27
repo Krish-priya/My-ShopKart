@@ -3,7 +3,8 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { apiRequest } from "../api";
 
 function paymentLabel(method) {
-  if (method === "UPI") return "UPI / GPay / PhonePe";
+  if (method === "RAZORPAY") return "Razorpay (Online · TEST)";
+  if (method === "UPI") return "UPI / GPay / PhonePe (legacy)";
   return "Cash on Delivery (COD)";
 }
 
@@ -99,6 +100,11 @@ export default function OrderDetail() {
               {order.payment_status}
             </span>
           </p>
+          {order.razorpay_payment_id && (
+            <p>
+              <strong>Razorpay payment id:</strong> {order.razorpay_payment_id}
+            </p>
+          )}
           <p>
             <strong>Phone:</strong> {order.phone}
           </p>

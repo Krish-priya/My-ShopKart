@@ -1,0 +1,40 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: shopkart_root
+      MYSQL_DATABASE: shopkart
+    ports:
+      - "3307:3306"
+    volumes:
+      - shopkart_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pshopkart_root"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: shopkart_root
+      DB_NAME: shopkart
+      JWT_SECRET: docker_dev_secret_change_me
+      CORS_ORIGIN: http://localhost:5173
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_xxxxxxxx}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-your_secret}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  shopkart_mysql:

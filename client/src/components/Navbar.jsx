@@ -176,6 +176,34 @@ export default function Navbar() {
             )}
           </div>
 
+          <div className="nav-icon-row" aria-label="Wishlist and bag">
+            <NavLink
+              to={user ? "/wishlist" : "/login"}
+              className={({ isActive }) =>
+                `icon-link wish-link${user && isActive ? " active" : ""}`
+              }
+              state={!user ? { from: "/wishlist" } : undefined}
+              aria-label="Wishlist"
+            >
+              <HeartIcon filled={wishCount > 0} />
+              <span className="icon-count">{wishCount}</span>
+            </NavLink>
+
+            <NavLink
+              to={user ? "/cart" : "/login"}
+              className={({ isActive }) =>
+                `icon-link cart-link${user && isActive ? " active" : ""}`
+              }
+              state={!user ? { from: "/cart" } : undefined}
+              aria-label="Cart"
+            >
+              <span className="icon-bag" aria-hidden="true">
+                Bag
+              </span>
+              <span className="icon-count">{itemCount}</span>
+            </NavLink>
+          </div>
+
           <button
             type="button"
             className={`menu-toggle${menuOpen ? " open" : ""}`}
@@ -255,34 +283,6 @@ export default function Navbar() {
                   </Link>
                 </>
               )}
-
-              <div className="nav-icon-row">
-                <NavLink
-                  to={user ? "/wishlist" : "/login"}
-                  className={({ isActive }) =>
-                    `icon-link wish-link${user && isActive ? " active" : ""}`
-                  }
-                  state={!user ? { from: "/wishlist" } : undefined}
-                  aria-label="Wishlist"
-                >
-                  <HeartIcon filled={wishCount > 0} />
-                  <span className="icon-count">{wishCount}</span>
-                </NavLink>
-
-                <NavLink
-                  to={user ? "/cart" : "/login"}
-                  className={({ isActive }) =>
-                    `icon-link cart-link${user && isActive ? " active" : ""}`
-                  }
-                  state={!user ? { from: "/cart" } : undefined}
-                  aria-label="Cart"
-                >
-                  <span className="icon-bag" aria-hidden="true">
-                    Bag
-                  </span>
-                  <span className="icon-count">{itemCount}</span>
-                </NavLink>
-              </div>
             </div>
           </div>
         </div>

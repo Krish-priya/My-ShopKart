@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import ProductCard from "../components/ProductCard";
+import ProductReviews from "../components/ProductReviews";
 import {
   getDiscountPercent,
   getMrp,
@@ -46,6 +47,18 @@ export default function ProductDetail() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  function handleReviewSummary({ avg_rating, review_count }) {
+    setProduct((prev) =>
+      prev
+        ? {
+            ...prev,
+            avg_rating,
+            review_count,
+          }
+        : prev
+    );
+  }
 
   async function handleAddToCart(goToCheckout = false) {
     if (!user) {
@@ -167,7 +180,7 @@ export default function ProductDetail() {
           <p className="detail-desc">{product.description}</p>
 
           <ul className="detail-bullets">
-            <li>Pay with Cash on Delivery or UPI</li>
+            <li>Pay with Cash on Delivery or Razorpay (TEST)</li>
             <li>{outOfStock ? "Currently unavailable" : `${product.stock} units in stock`}</li>
             <li>Ships after order confirmation</li>
           </ul>
@@ -222,6 +235,8 @@ export default function ProductDetail() {
           {error && <p className="error-text">{error}</p>}
         </div>
       </section>
+
+      <ProductReviews productId={id} onSummaryChange={handleReviewSummary} />
 
       {related.length > 0 && (
         <section className="section">

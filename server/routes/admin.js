@@ -1,6 +1,8 @@
 const express = require("express");
 const { pool } = require("../config/db");
 const { authenticate, requireAdmin } = require("../middleware/auth");
+const { validate } = require("../middleware/validate");
+const { productRules } = require("../middleware/validators");
 
 const router = express.Router();
 
@@ -54,6 +56,63 @@ router.get("/stats", async (req, res) => {
   } catch (error) {
     console.error("Admin stats error:", error);
     res.status(500).json({ message: "Failed to load stats" });
+  }
+});
+
+// GET /api/admin/analytics — chart data
+router.get("/analytics", async (req, res) => {
+  try {
+    const [revenueByDay] = await pool.query(
+      `SELECT DATE(created_at) AS day,
+              COALESCE(SUM(total_amount), 0) AS revenue,
+              COUNT(*) AS orders
+       FROM orders
+       WHERE status != 'cancelled'
+         AND created_at >= DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+       GROUP BY DATE(created_at)
+       ORDER BY day ASC`
+    );
+
+    const [ordersByStatus] = await pool.query(
+      `SELECT status, COUNT(*) AS count
+       FROM orders
+       GROUP BY status
+       ORDER BY count DESC`
+    );
+
+    const [topProducts] = await pool.query(
+      `SELECT p.id, p.name,
+              COALESCE(SUM(oi.quantity), 0) AS units_sold,
+              COALESCE(SUM(oi.quantity * oi.price), 0) AS revenue
+       FROM order_items oi
+       JOIN products p ON p.id = oi.product_id
+       JOIN orders o ON o.id = oi.order_id
+       WHERE o.status != 'cancelled'
+       GROUP BY p.id, p.name
+       ORDER BY units_sold DESC
+       LIMIT 8`
+    );
+
+    res.json({
+      revenueByDay: revenueByDay.map((row) => ({
+        day: row.day,
+        revenue: Number(row.revenue),
+        orders: Number(row.orders),
+      })),
+      ordersByStatus: ordersByStatus.map((row) => ({
+        status: row.status,
+        count: Number(row.count),
+      })),
+      topProducts: topProducts.map((row) => ({
+        id: row.id,
+        name: row.name,
+        units_sold: Number(row.units_sold),
+        revenue: Number(row.revenue),
+      })),
+    });
+  } catch (error) {
+    console.error("Admin analytics error:", error);
+    res.status(500).json({ message: "Failed to load analytics" });
   }
 });
 
@@ -115,7 +174,7 @@ router.put("/orders/:id/status", async (req, res) => {
 });
 
 // POST /api/admin/products
-router.post("/products", async (req, res) => {
+router.post("/products", productRules, validate, async (req, res) => {
   try {
     const parsed = parseProductBody(req.body);
     if (parsed.error) {
@@ -144,7 +203,7 @@ router.post("/products", async (req, res) => {
 });
 
 // PUT /api/admin/products/:id
-router.put("/products/:id", async (req, res) => {
+router.put("/products/:id", productRules, validate, async (req, res) => {
   try {
     const parsed = parseProductBody(req.body);
     if (parsed.error) {
