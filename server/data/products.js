@@ -431,7 +431,7 @@ const products = [
     "name": "USB Hub 4-Port",
     "description": "Compact USB hub to expand laptop ports for work and travel.",
     "price": 899,
-    "image_url": "https://images.unsplash.com/photo-1625948515291-69613efd103f?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=800&q=80",
     "category": "Electronics",
     "stock": 70
   },
@@ -487,7 +487,7 @@ const products = [
     "name": "Winter Scarf",
     "description": "Soft woven scarf to keep warm on chilly days.",
     "price": 699,
-    "image_url": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.unsplash.com/photo-1520006403909-838d6b92c22e?auto=format&fit=crop&w=800&q=80",
     "category": "Fashion",
     "stock": 60
   },
@@ -495,7 +495,7 @@ const products = [
     "name": "Rain Jacket",
     "description": "Water-resistant jacket for monsoon commuting and travel.",
     "price": 2299,
-    "image_url": "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&w=800&q=80",
     "category": "Fashion",
     "stock": 35
   },
@@ -543,7 +543,7 @@ const products = [
     "name": "Flip Flops",
     "description": "Lightweight flip flops for beach, pool, and home use.",
     "price": 399,
-    "image_url": "https://images.unsplash.com/photo-1603487742131-4160ec999306?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/1478442/pexels-photo-1478442.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Footwear",
     "stock": 90
   },
@@ -583,7 +583,7 @@ const products = [
     "name": "Trail Running Shoes",
     "description": "Grip-focused trail shoes for outdoor runs and hikes.",
     "price": 4199,
-    "image_url": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=800&q=80",
     "category": "Footwear",
     "stock": 27
   },
@@ -591,7 +591,7 @@ const products = [
     "name": "Nonstick Frying Pan",
     "description": "Durable nonstick pan for everyday cooking with easy clean-up.",
     "price": 1299,
-    "image_url": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Home",
     "stock": 46
   },
@@ -607,7 +607,7 @@ const products = [
     "name": "Storage Organizer Box",
     "description": "Stackable organizer box for closets, desks, and shelves.",
     "price": 649,
-    "image_url": "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/4239146/pexels-photo-4239146.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Home",
     "stock": 80
   },
@@ -631,7 +631,7 @@ const products = [
     "name": "Cutlery Set 24pc",
     "description": "Stainless steel cutlery set for everyday dining.",
     "price": 1799,
-    "image_url": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/3735207/pexels-photo-3735207.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Home",
     "stock": 41
   },
@@ -639,7 +639,7 @@ const products = [
     "name": "Vacuum Flask 1L",
     "description": "Insulated flask that keeps drinks hot or cold for hours.",
     "price": 1199,
-    "image_url": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=800&q=80",
     "category": "Home",
     "stock": 52
   },
@@ -655,7 +655,7 @@ const products = [
     "name": "Sunscreen SPF 50",
     "description": "Lightweight sunscreen for daily UV protection.",
     "price": 799,
-    "image_url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/3737598/pexels-photo-3737598.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Beauty",
     "stock": 88
   },
@@ -671,7 +671,7 @@ const products = [
     "name": "Makeup Brush Set",
     "description": "Soft brush set for foundation, eyes, and blending.",
     "price": 999,
-    "image_url": "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/2533266/pexels-photo-2533266.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Beauty",
     "stock": 56
   },
@@ -679,7 +679,7 @@ const products = [
     "name": "Body Lotion",
     "description": "Nourishing body lotion for soft smooth skin.",
     "price": 549,
-    "image_url": "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/3737576/pexels-photo-3737576.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Beauty",
     "stock": 77
   },
@@ -711,7 +711,7 @@ const products = [
     "name": "Electric Toothbrush",
     "description": "Rechargeable electric toothbrush for thorough cleaning.",
     "price": 2499,
-    "image_url": "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/298611/pexels-photo-298611.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Beauty",
     "stock": 30
   },
@@ -735,7 +735,7 @@ const products = [
     "name": "Keychain Leather",
     "description": "Handmade leather keychain with sturdy metal ring.",
     "price": 299,
-    "image_url": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/1152242/pexels-photo-1152242.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Accessories",
     "stock": 100
   },
@@ -743,7 +743,7 @@ const products = [
     "name": "Passport Holder",
     "description": "Travel passport holder with card slots and ticket pocket.",
     "price": 799,
-    "image_url": "https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/2007401/pexels-photo-2007401.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Accessories",
     "stock": 54
   },
@@ -767,7 +767,7 @@ const products = [
     "name": "Card Holder Slim",
     "description": "Minimal card holder for IDs and everyday cards.",
     "price": 499,
-    "image_url": "https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/1435752/pexels-photo-1435752.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Accessories",
     "stock": 78
   },
@@ -775,7 +775,7 @@ const products = [
     "name": "Gym Duffel Bag",
     "description": "Spacious duffel bag with shoe compartment for workouts.",
     "price": 1599,
-    "image_url": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/2261477/pexels-photo-2261477.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Accessories",
     "stock": 43
   },
@@ -783,7 +783,7 @@ const products = [
     "name": "Beanie Wool Cap",
     "description": "Warm knit beanie for winter mornings and travel.",
     "price": 449,
-    "image_url": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg?auto=compress&cs=tinysrgb&w=800",
     "category": "Accessories",
     "stock": 67
   },
