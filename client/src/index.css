@@ -106,7 +106,7 @@ body {
     radial-gradient(circle at 90% 0%, var(--glow-b), transparent 36%),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
   min-height: 100vh;
-  overflow-x: clip;
+  /* Avoid overflow-x on body — it breaks position:sticky/fixed header behavior on mobile */
   transition: background 0.25s ease, color 0.25s ease;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -159,6 +159,7 @@ select {
   width: min(1180px, calc(100% - 2rem));
   margin: 0 auto;
   padding: 1.35rem 0 3rem;
+  overflow-x: clip;
 }
 
 /* ===== Navbar ===== */
@@ -1729,6 +1730,33 @@ body.nav-drawer-open .category-bar {
 }
 
 @media (max-width: 860px) {
+  /* Keep top navbar + category bar fixed while page content scrolls */
+  .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 50;
+  }
+
+  .navbar-top {
+    background: var(--nav);
+  }
+
+  .category-bar {
+    background: var(--nav);
+  }
+
+  /* Offset page content by header height (taller when category chips are visible) */
+  .app-shell {
+    padding-top: 7.6rem;
+  }
+
+  .app-shell:has(.category-bar) {
+    padding-top: 10.85rem;
+  }
+
   body.nav-drawer-open {
     overflow: hidden;
   }
