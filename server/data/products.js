@@ -1,9 +1,9 @@
 /**
- * Shared catalog for setup + seed scripts (~36 products).
- * Image URLs use Unsplash with stable crop params.
+ * Shared catalog for setup + seed scripts (50 products).
+ * Image URLs use Unsplash/Pexels with product-matching photos.
  */
 const products = [
-  // Electronics
+  // Electronics (10)
   {
     name: "Wireless Bluetooth Headphones",
     description: "Comfortable over-ear headphones with clear sound and long battery life.",
@@ -16,7 +16,7 @@ const products = [
     name: "Smart Fitness Watch",
     description: "Track steps, heart rate, and sleep with a bright touchscreen display.",
     price: 3999,
-    image_url: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
+    image_url: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=800&q=80",
     category: "Electronics",
     stock: 35,
   },
@@ -24,7 +24,7 @@ const products = [
     name: "USB-C Fast Charger",
     description: "30W wall charger compatible with phones, tablets, and more.",
     price: 1299,
-    image_url: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80",
+    image_url: "https://images.unsplash.com/photo-1625948515291-69613efd103f?auto=format&fit=crop&w=800&q=80",
     category: "Electronics",
     stock: 55,
   },
@@ -68,8 +68,24 @@ const products = [
     category: "Electronics",
     stock: 60,
   },
+  {
+    name: "HD Webcam",
+    description: "1080p webcam with built-in mic for calls and streaming.",
+    price: 2799,
+    image_url: "https://images.unsplash.com/photo-1587826080692-f439cd0b70da?auto=format&fit=crop&w=800&q=80",
+    category: "Electronics",
+    stock: 33,
+  },
+  {
+    name: "Aluminum Laptop Stand",
+    description: "Ergonomic laptop stand that improves posture and cooling.",
+    price: 1699,
+    image_url: "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?auto=format&fit=crop&w=800&q=80",
+    category: "Electronics",
+    stock: 44,
+  },
 
-  // Fashion
+  // Fashion (8)
   {
     name: "Classic Cotton T-Shirt",
     description: "Soft everyday cotton tee in a clean everyday style.",
@@ -118,8 +134,24 @@ const products = [
     category: "Fashion",
     stock: 50,
   },
+  {
+    name: "Knit Sweater",
+    description: "Soft knit sweater for cool evenings and layering.",
+    price: 1599,
+    image_url: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=800&q=80",
+    category: "Fashion",
+    stock: 46,
+  },
+  {
+    name: "Formal Trousers",
+    description: "Tailored trousers suited for office and formal occasions.",
+    price: 1799,
+    image_url: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80",
+    category: "Fashion",
+    stock: 38,
+  },
 
-  // Footwear
+  // Footwear (7)
   {
     name: "Running Shoes",
     description: "Lightweight shoes designed for daily runs and casual wear.",
@@ -160,8 +192,24 @@ const products = [
     category: "Footwear",
     stock: 36,
   },
+  {
+    name: "Hiking Boots",
+    description: "Rugged boots with grip sole for trails and outdoor walks.",
+    price: 3999,
+    image_url: "https://images.unsplash.com/photo-1520639888713-7851133b1ed0?auto=format&fit=crop&w=800&q=80",
+    category: "Footwear",
+    stock: 30,
+  },
+  {
+    name: "Formal Oxford Shoes",
+    description: "Classic leather oxfords for office and formal events.",
+    price: 3299,
+    image_url: "https://images.unsplash.com/photo-1449505278894-297fdb3edbc1?auto=format&fit=crop&w=800&q=80",
+    category: "Footwear",
+    stock: 34,
+  },
 
-  // Home
+  // Home (8)
   {
     name: "Stainless Steel Water Bottle",
     description: "Keeps drinks cold or hot for hours. Leak-proof lid included.",
@@ -190,8 +238,7 @@ const products = [
     name: "Throw Cushion Cover",
     description: "Soft textured cushion cover to refresh your living space.",
     price: 549,
-    image_url:
-      "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1200&q=80",
+    image_url: "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=800&q=80",
     category: "Home",
     stock: 75,
   },
@@ -211,8 +258,24 @@ const products = [
     category: "Home",
     stock: 64,
   },
+  {
+    name: "Cotton Bed Sheet Set",
+    description: "Soft cotton sheet set for a comfortable night's sleep.",
+    price: 1499,
+    image_url: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80",
+    category: "Home",
+    stock: 42,
+  },
+  {
+    name: "Wall Clock Modern",
+    description: "Minimal wall clock that suits living rooms and offices.",
+    price: 899,
+    image_url: "https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?auto=format&fit=crop&w=800&q=80",
+    category: "Home",
+    stock: 50,
+  },
 
-  // Beauty
+  // Beauty (8)
   {
     name: "Matte Lipstick",
     description: "Long-wear matte lipstick with a smooth creamy finish.",
@@ -261,13 +324,29 @@ const products = [
     category: "Beauty",
     stock: 38,
   },
+  {
+    name: "Face Moisturizer",
+    description: "Lightweight daily moisturizer for soft hydrated skin.",
+    price: 999,
+    image_url: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80",
+    category: "Beauty",
+    stock: 72,
+  },
+  {
+    name: "Nail Polish Set",
+    description: "Vibrant nail polish colors for everyday and party looks.",
+    price: 799,
+    image_url: "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=800&q=80",
+    category: "Beauty",
+    stock: 66,
+  },
 
-  // Accessories
+  // Accessories (9)
   {
     name: "Leather Wallet",
     description: "Slim bifold wallet with multiple card slots and cash pocket.",
     price: 899,
-    image_url: "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=800&q=80",
+    image_url: "https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=800&q=80",
     category: "Accessories",
     stock: 70,
   },
@@ -302,6 +381,38 @@ const products = [
     image_url: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80",
     category: "Accessories",
     stock: 80,
+  },
+  {
+    name: "Analog Wrist Watch",
+    description: "Classic analog watch with a clean dial and leather strap.",
+    price: 2199,
+    image_url: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=800&q=80",
+    category: "Accessories",
+    stock: 41,
+  },
+  {
+    name: "Canvas Tote Bag",
+    description: "Spacious canvas tote for shopping, college, and travel.",
+    price: 699,
+    image_url: "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=800&q=80",
+    category: "Accessories",
+    stock: 74,
+  },
+  {
+    name: "Phone Case Clear",
+    description: "Slim protective clear case that shows your phone design.",
+    price: 399,
+    image_url: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?auto=format&fit=crop&w=800&q=80",
+    category: "Accessories",
+    stock: 95,
+  },
+  {
+    name: "Travel Neck Pillow",
+    description: "Soft memory-foam neck pillow for flights and long trips.",
+    price: 899,
+    image_url: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+    category: "Accessories",
+    stock: 57,
   },
 ];
 
