@@ -148,6 +148,9 @@ export function placeLocalOrder(userId, body = {}) {
   const phone = String(body.phone || "").trim();
   const paymentMethod = String(body.paymentMethod || "COD").toUpperCase();
   const paymentConfirmed = Boolean(body.paymentConfirmed);
+  const razorpayPaymentId = body.razorpay_payment_id
+    ? String(body.razorpay_payment_id)
+    : null;
 
   if (!shippingAddress || shippingAddress.length < 8) {
     throw new Error("Please enter a full shipping address");
@@ -155,11 +158,14 @@ export function placeLocalOrder(userId, body = {}) {
   if (!/^[0-9]{10}$/.test(phone)) {
     throw new Error("Please enter a valid 10-digit phone number");
   }
-  if (paymentMethod !== "COD" && paymentMethod !== "UPI") {
-    throw new Error("Payment method must be COD or UPI");
+  if (!["COD", "UPI", "RAZORPAY"].includes(paymentMethod)) {
+    throw new Error("Payment method must be COD or RAZORPAY");
   }
   if (paymentMethod === "UPI" && !paymentConfirmed) {
     throw new Error("Complete the UPI payment before placing the order");
+  }
+  if (paymentMethod === "RAZORPAY" && !razorpayPaymentId && !paymentConfirmed) {
+    throw new Error("Complete the Razorpay payment before placing the order");
   }
 
   const cart = buildCartPayload(userId);
@@ -171,8 +177,10 @@ export function placeLocalOrder(userId, body = {}) {
     }
   }
 
-  const paymentStatus = paymentMethod === "UPI" ? "paid" : "unpaid";
-  const orderStatus = paymentMethod === "UPI" ? "confirmed" : "pending";
+  const isOnlinePaid =
+    paymentMethod === "UPI" || paymentMethod === "RAZORPAY";
+  const paymentStatus = isOnlinePaid ? "paid" : "unpaid";
+  const orderStatus = isOnlinePaid ? "confirmed" : "pending";
   const orders = loadOrders(userId);
   const orderId =
     orders.reduce((max, o) => Math.max(max, Number(o.id) || 0), 0) + 1;
@@ -193,6 +201,7 @@ export function placeLocalOrder(userId, body = {}) {
     status: orderStatus,
     payment_method: paymentMethod,
     payment_status: paymentStatus,
+    razorpay_payment_id: razorpayPaymentId,
     shipping_address: shippingAddress,
     phone,
     created_at: new Date().toISOString(),
@@ -204,7 +213,12 @@ export function placeLocalOrder(userId, body = {}) {
   saveOrders(userId, orders);
   clearLocalCart(userId);
 
-  const payLabel = paymentMethod === "UPI" ? "UPI (Paid)" : "Cash on Delivery";
+  const payLabel =
+    paymentMethod === "RAZORPAY"
+      ? "Razorpay (Paid · TEST)"
+      : paymentMethod === "UPI"
+        ? "UPI (Paid)"
+        : "Cash on Delivery";
   return {
     message: `Order placed successfully — ${payLabel}`,
     orderId,
@@ -217,6 +231,7 @@ export function placeLocalOrder(userId, body = {}) {
       status: order.status,
       payment_method: order.payment_method,
       payment_status: order.payment_status,
+      razorpay_payment_id: order.razorpay_payment_id,
       shipping_address: order.shipping_address,
       phone: order.phone,
       created_at: order.created_at,

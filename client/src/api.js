@@ -91,11 +91,18 @@ export async function apiRequest(path, options = {}) {
     if (demo) return demo;
 
     if (!isJson) {
-      throw new Error(
-        import.meta.env.DEV
-          ? "Cannot reach the ShopKart API. Start the backend: cd server && npm run dev"
-          : "Service is unavailable. Please try again."
-      );
+      const hasRemoteApi = Boolean(import.meta.env.VITE_API_URL);
+      if (import.meta.env.DEV) {
+        throw new Error(
+          "Cannot reach the ShopKart API. Start the backend: cd server && npm run dev"
+        );
+      }
+      if (!hasRemoteApi) {
+        throw new Error(
+          "Live site has no backend yet. Use http://localhost:5173 for Razorpay, or set VITE_API_URL to your deployed API."
+        );
+      }
+      throw new Error("Service is unavailable. Please try again.");
     }
 
     throw new Error(data.message || "Something went wrong");

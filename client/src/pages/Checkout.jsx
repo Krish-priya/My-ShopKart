@@ -3,6 +3,11 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { apiRequest } from "../api";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { shouldUseLocalAuth } from "../localAuth";
+
+// Public Razorpay TEST key id (safe in frontend). Secret stays on server only.
+const RAZORPAY_KEY =
+  import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_TIauRDjRtlfsOg";
 
 function loadRazorpayScript() {
   return new Promise((resolve) => {
@@ -15,6 +20,54 @@ function loadRazorpayScript() {
     script.onload = () => resolve(true);
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
+  });
+}
+
+function openRazorpayCheckout({
+  key,
+  amountPaise,
+  currency = "INR",
+  orderId,
+  user,
+  phone,
+  onSuccess,
+  onFailure,
+}) {
+  return new Promise((resolve, reject) => {
+    const rzp = new window.Razorpay({
+      key,
+      amount: amountPaise,
+      currency,
+      name: "ShopKart",
+      description: "Order payment (TEST mode)",
+      ...(orderId ? { order_id: orderId } : {}),
+      prefill: {
+        name: user?.name || "",
+        email: user?.email || "",
+        contact: phone,
+      },
+      theme: { color: "#0f766e" },
+      handler: async (response) => {
+        try {
+          await onSuccess(response);
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      },
+      modal: {
+        ondismiss: () => reject(new Error("Payment cancelled")),
+      },
+    });
+
+    rzp.on("payment.failed", (response) => {
+      const message =
+        response?.error?.description || "Razorpay payment failed";
+      onFailure?.(message);
+      reject(new Error(message));
+    });
+
+    rzp.open();
   });
 }
 
@@ -55,75 +108,94 @@ export default function Checkout() {
     clearCartState();
   }
 
+  async function finishPaidOrder(trimmedAddress, trimmedPhone, razorpayResponse) {
+    const data = await apiRequest("/orders", {
+      method: "POST",
+      body: JSON.stringify({
+        shippingAddress: trimmedAddress,
+        phone: trimmedPhone,
+        paymentMethod: "RAZORPAY",
+        paymentConfirmed: true,
+        razorpay_order_id: razorpayResponse.razorpay_order_id || null,
+        razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+        razorpay_signature: razorpayResponse.razorpay_signature || "static-demo",
+      }),
+    });
+
+    navigate(`/orders/${data.orderId}`, {
+      state: {
+        success: `Order #${data.orderId} paid via Razorpay (TEST).`,
+      },
+      replace: true,
+    });
+    clearCartState();
+  }
+
   async function placeRazorpayOrder(trimmedAddress, trimmedPhone) {
     const ready = await loadRazorpayScript();
     if (!ready) {
       throw new Error("Could not load Razorpay checkout. Check your network.");
     }
 
-    const paymentOrder = await apiRequest("/payments/razorpay/create", {
-      method: "POST",
-      body: JSON.stringify({}),
-    });
+    const amountPaise = Math.round(Number(total) * 100);
+    if (amountPaise < 100) {
+      throw new Error("Order amount is too low for online payment");
+    }
 
-    const key =
-      import.meta.env.VITE_RAZORPAY_KEY_ID || paymentOrder.key;
+    // Live Vercel/static hosting: no Express backend → client checkout + local order
+    if (shouldUseLocalAuth()) {
+      await openRazorpayCheckout({
+        key: RAZORPAY_KEY,
+        amountPaise,
+        user,
+        phone: trimmedPhone,
+        onSuccess: (response) =>
+          finishPaidOrder(trimmedAddress, trimmedPhone, response),
+      });
+      return;
+    }
 
-    await new Promise((resolve, reject) => {
-      const rzp = new window.Razorpay({
-        key,
-        amount: paymentOrder.amount,
+    // Local/full backend path: create Razorpay order on server, then verify
+    try {
+      const paymentOrder = await apiRequest("/payments/razorpay/create", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+
+      await openRazorpayCheckout({
+        key: paymentOrder.key || RAZORPAY_KEY,
+        amountPaise: paymentOrder.amount,
         currency: paymentOrder.currency,
-        name: "ShopKart",
-        description: "Order payment (TEST mode)",
-        order_id: paymentOrder.razorpayOrderId,
-        prefill: {
-          name: user?.name || "",
-          email: user?.email || "",
-          contact: trimmedPhone,
-        },
-        theme: { color: "#0f766e" },
-        handler: async (response) => {
-          try {
-            const data = await apiRequest("/orders", {
-              method: "POST",
-              body: JSON.stringify({
-                shippingAddress: trimmedAddress,
-                phone: trimmedPhone,
-                paymentMethod: "RAZORPAY",
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
-
-            navigate(`/orders/${data.orderId}`, {
-              state: {
-                success: `Order #${data.orderId} paid via Razorpay (TEST).`,
-              },
-              replace: true,
-            });
-            clearCartState();
-            resolve();
-          } catch (err) {
-            reject(err);
-          }
-        },
-        modal: {
-          ondismiss: () => reject(new Error("Payment cancelled")),
-        },
+        orderId: paymentOrder.razorpayOrderId,
+        user,
+        phone: trimmedPhone,
+        onSuccess: (response) =>
+          finishPaidOrder(trimmedAddress, trimmedPhone, response),
       });
-
-      rzp.on("payment.failed", (response) => {
-        reject(
-          new Error(
-            response?.error?.description || "Razorpay payment failed"
-          )
-        );
-      });
-
-      rzp.open();
-    });
+    } catch (err) {
+      // If API is down, fall back so checkout still works
+      const msg = String(err.message || "");
+      if (
+        msg.includes("Cannot reach") ||
+        msg.includes("unavailable") ||
+        msg.includes("connect") ||
+        msg.includes("backend")
+      ) {
+        await openRazorpayCheckout({
+          key: RAZORPAY_KEY,
+          amountPaise,
+          user,
+          phone: trimmedPhone,
+          onSuccess: (response) =>
+            finishPaidOrder(trimmedAddress, trimmedPhone, {
+              ...response,
+              paymentConfirmed: true,
+            }),
+        });
+        return;
+      }
+      throw err;
+    }
   }
 
   async function handleSubmit(e) {
@@ -243,7 +315,7 @@ export default function Checkout() {
               </p>
               <p className="pay-note">
                 Razorpay opens in TEST mode. No real money is charged.
-                Use Razorpay test cards/UPI from their docs.
+                Use test card: 4111 1111 1111 1111
               </p>
             </div>
           )}
