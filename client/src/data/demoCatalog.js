@@ -901,3 +901,69 @@ export const DEMO_PRODUCTS = [
     stock: 62,
   }
 ];
+
+function sortProducts(list, sort) {
+  const items = [...list];
+  switch (sort) {
+    case "price-asc":
+      return items.sort((a, b) => a.price - b.price);
+    case "price-desc":
+      return items.sort((a, b) => b.price - a.price);
+    case "name-asc":
+      return items.sort((a, b) => a.name.localeCompare(b.name));
+    case "name-desc":
+      return items.sort((a, b) => b.name.localeCompare(a.name));
+    case "newest":
+    default:
+      return items.sort((a, b) => b.id - a.id);
+  }
+}
+
+/** Handle GET /products* when live API is unavailable. */
+export function handleDemoProducts(path) {
+  const [pathname, queryString = ""] = path.split("?");
+  const params = new URLSearchParams(queryString);
+
+  if (pathname === "/products/categories") {
+    const categories = [...new Set(DEMO_PRODUCTS.map((p) => p.category))];
+    return { categories };
+  }
+
+  const detailMatch = pathname.match(/^\/products\/(\d+)$/);
+  if (detailMatch) {
+    const product = DEMO_PRODUCTS.find((p) => p.id === Number(detailMatch[1]));
+    if (!product) {
+      throw new Error("Product not found");
+    }
+    return { product };
+  }
+
+  if (pathname === "/products") {
+    let list = [...DEMO_PRODUCTS];
+    const category = params.get("category");
+    const search = (params.get("search") || "").trim().toLowerCase();
+    const sort = params.get("sort") || "newest";
+    const limit = Number(params.get("limit"));
+
+    if (category && category !== "All") {
+      list = list.filter((p) => p.category === category);
+    }
+    if (search) {
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(search) ||
+          p.description.toLowerCase().includes(search) ||
+          p.category.toLowerCase().includes(search)
+      );
+    }
+
+    list = sortProducts(list, sort);
+    if (Number.isFinite(limit) && limit > 0) {
+      list = list.slice(0, limit);
+    }
+
+    return { products: list };
+  }
+
+  return null;
+}
